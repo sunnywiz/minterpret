@@ -13,23 +13,38 @@ var config = new CsvConfiguration(CultureInfo.InvariantCulture)
 {
     PrepareHeaderForMatch = args => args.Header.Replace(" ",""),
 };
-using var reader = new StreamReader(pathToInputFile);
-using var csv = new CsvReader(reader, config);
-var records = csv.GetRecords<MintRecord>().ToList();
+List<MintRecord> records;
+using (var reader = new StreamReader(pathToInputFile))
+{
+    ;
+    using var csv = new CsvReader(reader, config);
+    records = csv.GetRecords<MintRecord>().ToList();
+}
+
+// second copy for dealing with FIFO etc without modifying first set
+List<MintRecord> records2;
+using (var reader2 = new StreamReader(pathToInputFile))
+{
+    using var csv2 = new CsvReader(reader2, config);
+    records2 = csv2.GetRecords<MintRecord>().ToList();
+}
+
 
 Console.WriteLine($"Loaded {records.Count} records");
 
-var startDate = new DateTime(2023, 1, 1); 
+var startDate = new DateTime(2020, 1, 1); 
 var creditCardRecords = records.Where(x=>x.AccountName=="CREDIT CARD" && x.Date>=startDate).ToList(); 
 Console.WriteLine($"{creditCardRecords.Count} CC records");
-
-var method = "FIFO";
 
 Balances b = null;
 DateTime? lastDateTime = null;
 var balancesOverTime = new Dictionary<DateTime, Balances>();
-var listToPayOff = new List<MintRecord>(); 
-foreach (var r in creditCardRecords.OrderBy(x=>x.Date).Take(1000))
+
+var listToPayOff = records2.Where(x => x.AccountName == "CREDIT CARD" && x.Date >= startDate
+                                                                      && x.SignedAmount < 0)
+    .OrderBy(x=>x.Date).ToList();
+
+foreach (var r in creditCardRecords.OrderBy(x=>x.Date))
 {
     if (lastDateTime == null)
     {
@@ -93,7 +108,6 @@ foreach (var r in creditCardRecords.OrderBy(x=>x.Date).Take(1000))
     {
         Console.WriteLine($"Add Transaction {r.Date:d} {r.Category} {r.SignedAmount}");
         b.AddTransaction(r.Category, r.SignedAmount);
-        listToPayOff.Add(r);
     }
 }
 
@@ -105,23 +119,28 @@ var categories = b.Keys.OrderBy(x => x).ToList();
 for (var c = 0; c < categories.Count; c++)
 {
     var category = categories[c];
-    ws.Cell(1, c+1).SetValue(category);
+    ws.Cell(1, c+2).SetValue(category);
 }
 
 ws.Cell(1, 1).SetValue("Date");
 
 int row = 2;
-var days = balancesOverTime.Keys.OrderBy(x => x).ToList(); 
+var days = balancesOverTime.Keys.OrderBy(x => x).ToList();
+var nextDate = startDate; 
 foreach (var day in days)
 {
+    if (day < nextDate) continue;
+    nextDate = nextDate.AddDays(7); 
+
     ws.Cell(row, 1).SetValue(day);
+
     var bal = balancesOverTime[day];
     for (var c = 0; c < categories.Count; c++)
     {
         var category = categories[c];
         if (bal.TryGetValue(category, out var amount))
         {
-            ws.Cell(row, c + 1).SetValue(-amount); 
+            ws.Cell(row, c + 2).SetValue(-amount); 
         }
     }
 
