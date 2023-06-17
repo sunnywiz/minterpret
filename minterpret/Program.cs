@@ -32,7 +32,7 @@ using (var reader2 = new StreamReader(pathToInputFile))
 
 Console.WriteLine($"Loaded {records.Count} records");
 
-var startDate = new DateTime(2020, 1, 1); 
+var startDate = new DateTime(2022, 7, 1); 
 var creditCardRecords = records.Where(x=>x.AccountName=="CREDIT CARD" && x.Date>=startDate).ToList(); 
 Console.WriteLine($"{creditCardRecords.Count} CC records");
 
@@ -116,11 +116,32 @@ var ws = wb.Worksheets.Add("Balances");
 
 // the last b has all the categories
 var categories = b.Keys.OrderBy(x => x).ToList();
-for (var c = 0; c < categories.Count; c++)
+
+// we want to collapse the categories. 
+// find the most active categories
+var categorySize = categories.ToDictionary(x => x, x => 0m);
+foreach (var bot in balancesOverTime)
 {
-    var category = categories[c];
+    foreach (var c in bot.Value)
+    {
+        categorySize[c.Key] += Math.Abs(c.Value); 
+    }
+}
+
+var totalCategories = 25;
+var categoriesToSave = categorySize
+    .OrderByDescending(x => x.Value)
+    .Select(x=>x.Key)
+    .Take(totalCategories - 1)
+    .ToList();
+
+for (var c = 0; c < categoriesToSave.Count; c++)
+{
+    var category = categoriesToSave[c];
     ws.Cell(1, c+2).SetValue(category);
 }
+
+ws.Cell(1, totalCategories + 1).SetValue("OTHER");
 
 ws.Cell(1, 1).SetValue("Date");
 
@@ -135,19 +156,28 @@ foreach (var day in days)
     ws.Cell(row, 1).SetValue(day);
 
     var bal = balancesOverTime[day];
-    for (var c = 0; c < categories.Count; c++)
+    for (var c = 0; c < categoriesToSave.Count; c++)
     {
-        var category = categories[c];
+        var category = categoriesToSave[c];
         if (bal.TryGetValue(category, out var amount))
         {
             ws.Cell(row, c + 2).SetValue(-amount); 
         }
     }
 
+    var otherTotal = 0m;
+    foreach (var category in bal.Keys)
+    {
+        if (categoriesToSave.Contains(category)) continue;
+        otherTotal += bal[category];
+    }
+
+    ws.Cell(row, totalCategories + 1).SetValue(-otherTotal); 
+
     row++;
 }
 
-var table = ws.Range(1, 1, row - 1, categories.Count + 1).CreateTable(); 
+var table = ws.Range(1, 1, row - 1, totalCategories + 1).CreateTable(); 
 
 wb.SaveAs(pathToOutputFile);
 
