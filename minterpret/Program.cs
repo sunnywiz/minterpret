@@ -4,8 +4,10 @@ using CsvHelper;
 using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using ClosedXML.Excel;
 
 var pathToInputFile = @"C:\Users\sgulati\OneDrive\2023P\mint_transactions.csv";
+var pathToOutputFile = @"C:\Users\sgulati\OneDrive\2023P\credit_card_over_time.xlsx";
 
 var config = new CsvConfiguration(CultureInfo.InvariantCulture)
 {
@@ -49,7 +51,39 @@ foreach (var r in creditCardRecords.OrderBy(x=>x.Date).Take(1000))
     b.AddTransaction(r.Category, r.SignedAmount);
 }
 
+using var wb = new XLWorkbook();
+var ws = wb.Worksheets.Add("Balances");
 
+// the last b has all the categories
+var categories = b.Keys.OrderBy(x => x).ToList();
+for (var c = 0; c < categories.Count; c++)
+{
+    var category = categories[c];
+    ws.Cell(1, c+1).SetValue(category);
+}
+
+ws.Cell(1, 1).SetValue("Date");
+
+int row = 2; 
+foreach (var day in balancesOverTime.Keys.OrderBy(x => x))
+{
+    ws.Cell(row, 1).SetValue(day);
+    var bal = balancesOverTime[day];
+    for (var c = 0; c < categories.Count; c++)
+    {
+        var category = categories[c];
+        if (bal.TryGetValue(category, out var amount))
+        {
+            ws.Cell(row, c + 1).SetValue(amount); 
+        }
+    }
+
+    row++;
+}
+
+var table = ws.Range(1, 1, row - 1, categories.Count + 1).CreateTable(); 
+
+wb.SaveAs(pathToOutputFile);
 
 public class Balances : Dictionary<string, decimal>
 {
