@@ -27,7 +27,8 @@ var method = "FIFO";
 
 Balances b = null;
 DateTime? lastDateTime = null;
-var balancesOverTime = new Dictionary<DateTime, Balances>(); 
+var balancesOverTime = new Dictionary<DateTime, Balances>();
+var listToPayOff = new List<MintRecord>(); 
 foreach (var r in creditCardRecords.OrderBy(x=>x.Date).Take(1000))
 {
     if (lastDateTime == null)
@@ -47,8 +48,53 @@ foreach (var r in creditCardRecords.OrderBy(x=>x.Date).Take(1000))
         b = newb;
     }
 
-    Console.WriteLine($"Add Transaction {r.Date:d} {r.Category} {r.SignedAmount}");
-    b.AddTransaction(r.Category, r.SignedAmount);
+    if (r.SignedAmount > 0)
+    {
+        if (r.Category == "Credit Card Payment")
+        {
+            Console.WriteLine("CC Payment!");
+            var amountToPay = r.SignedAmount;
+            while (amountToPay > 0)
+            {
+                if (listToPayOff.Any())
+                {
+                    // remember this is negative
+                    var first = listToPayOff.First();
+                    if (first.SignedAmount < -amountToPay)
+                    {
+                        // first can absorb payment
+                        first.Amount -= amountToPay;
+                        b.AddTransaction(first.Category, amountToPay);
+                        amountToPay = 0;
+                    }
+                    else
+                    {
+                        // partial handle, discard the first
+                        amountToPay += first.SignedAmount;
+                        b.AddTransaction(first.Category,-first.SignedAmount);
+                        listToPayOff.RemoveAt(0); 
+                    }
+                }
+                else
+                {
+                    // nothing remaining to pay off
+                    b.AddTransaction("Overpayment", amountToPay);
+                    amountToPay = 0; 
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Add Return Transaction {r.Date:d} {r.Category} {r.SignedAmount}");
+            b.AddTransaction(r.Category, r.SignedAmount);
+        }
+    }
+    else
+    {
+        Console.WriteLine($"Add Transaction {r.Date:d} {r.Category} {r.SignedAmount}");
+        b.AddTransaction(r.Category, r.SignedAmount);
+        listToPayOff.Add(r);
+    }
 }
 
 using var wb = new XLWorkbook();
@@ -64,8 +110,9 @@ for (var c = 0; c < categories.Count; c++)
 
 ws.Cell(1, 1).SetValue("Date");
 
-int row = 2; 
-foreach (var day in balancesOverTime.Keys.OrderBy(x => x))
+int row = 2;
+var days = balancesOverTime.Keys.OrderBy(x => x).ToList(); 
+foreach (var day in days)
 {
     ws.Cell(row, 1).SetValue(day);
     var bal = balancesOverTime[day];
@@ -74,7 +121,7 @@ foreach (var day in balancesOverTime.Keys.OrderBy(x => x))
         var category = categories[c];
         if (bal.TryGetValue(category, out var amount))
         {
-            ws.Cell(row, c + 1).SetValue(amount); 
+            ws.Cell(row, c + 1).SetValue(-amount); 
         }
     }
 
