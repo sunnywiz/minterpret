@@ -3,7 +3,6 @@ using CsvHelper.Configuration;
 using CsvHelper;
 using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using ClosedXML.Excel;
 
 var pathToInputFile = @"C:\Users\sgulati\OneDrive\2023P\mint_transactions.csv";
@@ -111,9 +110,6 @@ foreach (var r in creditCardRecords.OrderBy(x=>x.Date))
     }
 }
 
-using var wb = new XLWorkbook();
-var ws = wb.Worksheets.Add("Balances");
-
 // the last b has all the categories
 var categories = b.Keys.OrderBy(x => x).ToList();
 
@@ -135,6 +131,7 @@ var categoriesToSave = categorySize
     .Take(totalCategories - 1)
     .ToList();
 
+/*
 for (var c = 0; c < categoriesToSave.Count; c++)
 {
     var category = categoriesToSave[c];
@@ -180,39 +177,4 @@ foreach (var day in days)
 var table = ws.Range(1, 1, row - 1, totalCategories + 1).CreateTable(); 
 
 wb.SaveAs(pathToOutputFile);
-
-public class Balances : Dictionary<string, decimal>
-{
-    public void AddTransaction(string category, decimal amount)
-    {
-        if (!this.ContainsKey(category))
-        {
-            this[category] = 0.0m; 
-        }
-        this[category] += amount;
-    }
-
-    public Balances Clone()
-    {
-        var newb = new Balances();
-        foreach (var kvp in this)
-        {
-            newb[kvp.Key] = kvp.Value;
-        }
-
-        return newb;
-    }
-
-    public override string ToString()
-    {
-        var sb = new StringBuilder();
-        foreach (var k in this.Keys.OrderBy(x => x))
-        {
-            if (sb.Length > 0) sb.Append(" ");
-            sb.Append(k);
-            sb.Append(":");
-            sb.Append(this[k].ToString("C2"));
-        }
-        return sb.ToString();
-    }
-}
+*/
