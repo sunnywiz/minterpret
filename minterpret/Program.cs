@@ -4,9 +4,14 @@ using CsvHelper;
 using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
 using ClosedXML.Excel;
+using OxyPlot.Series;
+using OxyPlot;
+using OxyPlot.ImageSharp;
+using OxyPlot.Series;
 
-var pathToInputFile = @"C:\Users\sgulati\OneDrive\2023P\mint_transactions.csv";
+var pathToInputFile = @"C:\Users\sgulati\OneDrive\2023P\mint_transactions_2020-now.csv";
 var pathToOutputFile = @"C:\Users\sgulati\OneDrive\2023P\credit_card_over_time.xlsx";
+
 
 var config = new CsvConfiguration(CultureInfo.InvariantCulture)
 {
@@ -31,7 +36,8 @@ using (var reader2 = new StreamReader(pathToInputFile))
 
 Console.WriteLine($"Loaded {records.Count} records");
 
-var startDate = new DateTime(2022, 7, 1); 
+var startDate = new DateTime(2022, 7, 18);
+var initialBalance = 7836.17m; 
 var creditCardRecords = records.Where(x=>x.AccountName=="CREDIT CARD" && x.Date>=startDate).ToList(); 
 Console.WriteLine($"{creditCardRecords.Count} CC records");
 
@@ -42,13 +48,22 @@ var balancesOverTime = new Dictionary<DateTime, Balances>();
 var listToPayOff = records2.Where(x => x.AccountName == "CREDIT CARD" && x.Date >= startDate
                                                                       && x.SignedAmount < 0)
     .OrderBy(x=>x.Date).ToList();
-
+listToPayOff.Insert(0, new MintRecord()
+{
+    AccountName = "CREDIT CARD",
+    Amount=initialBalance, 
+    Category = "Initial Balance",
+    Date = startDate.AddDays(-1),
+    Description = "Initial Balance", 
+    TransactionType = "debit"
+});
 foreach (var r in creditCardRecords.OrderBy(x=>x.Date))
 {
     if (lastDateTime == null)
     {
         Console.WriteLine($"Starting at {r.Date.Date:d}");
         b = new Balances(); 
+        b.AddTransaction("Initial Balance",-initialBalance);
         lastDateTime = r.Date.Date;
         balancesOverTime[lastDateTime.Value] = b; 
     }
@@ -131,7 +146,14 @@ var categoriesToSave = categorySize
     .Take(totalCategories - 1)
     .ToList();
 
-/*
+// ...    
+//var model = new PlotModel { Title = "Plot", Background = OxyColor.FromRgb(255, 255, 255) };
+//model.Series.Add(new FunctionSeries(Math.Sin, 0d, 10d, 0.1, "Sin(x)"));
+//PngExporter.Export(model, "plot.png", 1280, 720);
+
+using var wb = new XLWorkbook();
+var ws = wb.Worksheets.Add("Balances");
+
 for (var c = 0; c < categoriesToSave.Count; c++)
 {
     var category = categoriesToSave[c];
@@ -177,4 +199,3 @@ foreach (var day in days)
 var table = ws.Range(1, 1, row - 1, totalCategories + 1).CreateTable(); 
 
 wb.SaveAs(pathToOutputFile);
-*/
