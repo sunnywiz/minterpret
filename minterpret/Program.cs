@@ -33,14 +33,17 @@ var creditCardRecords = records.Where(x => x.AccountName == "CREDIT CARD" && x.D
 Console.WriteLine($"{creditCardRecords.Count} CC records");
 
 
-var balancesOverTime = new CalculateBalancesOverTimeFIFOCommand()
+var fifoBoT = new CalculateBalancesOverTimeFIFOCommand()
+    .Execute(creditCardRecords, startDate, initialBalance);
+
+var spreadBOT = new CalculateBalancesOverTimeDwindleCommand()
     .Execute(creditCardRecords, startDate, initialBalance);
 
 using var wb = new XLWorkbook();
 
 new AddChartSheetToWorkbookCommand().Execute
-    (wb, "FIFO25", balancesOverTime, totalCategories: 25);
+    (wb, "FIFO25", fifoBoT, totalCategories: 25);
 new AddChartSheetToWorkbookCommand().Execute
-    (wb, "FIFO10", balancesOverTime, totalCategories: 10);
+    (wb, "Spread25", spreadBOT, totalCategories: 25);
 
 wb.SaveAs(pathToOutputFile);
