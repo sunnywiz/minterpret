@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "minterpret", "minterpret\minterpret.csproj", "{67996E5A-39BD-423E-811D-477D5AF3CD6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "minterpret", "minterpret\minterpret.csproj", "{67996E5A-39BD-423E-811D-477D5AF3CD6B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mintwpf", "mintwpf\mintwpf.csproj", "{7B23BAC3-0B71-4797-9E5F-87C423C146E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{67996E5A-39BD-423E-811D-477D5AF3CD6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67996E5A-39BD-423E-811D-477D5AF3CD6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{67996E5A-39BD-423E-811D-477D5AF3CD6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B23BAC3-0B71-4797-9E5F-87C423C146E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B23BAC3-0B71-4797-9E5F-87C423C146E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B23BAC3-0B71-4797-9E5F-87C423C146E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B23BAC3-0B71-4797-9E5F-87C423C146E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
