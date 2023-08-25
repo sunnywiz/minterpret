@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,15 +26,34 @@ namespace mintwpf
         {
             InitializeComponent();
             var c = new Chart();
-            var series = new AreaSeries() { Title = "Area1", IndependentValuePath = "Key", DependentValuePath = "Value"};
-            series.ItemsSource = new KeyValuePair<string, int>[]
+
+            var sas = new StackedAreaSeries();
+            sas.SeriesDefinitions.Add(new SeriesDefinition()
             {
-                new KeyValuePair<string, int>("A", 5),
-                new KeyValuePair<string, int>("B", 6),
-                new KeyValuePair<string, int>("C", 7)
-            };
-            c.Series.Add(series); 
-            
+                Name="A2", 
+                IndependentValuePath = "Key",
+                DependentValuePath = "Value",
+                ItemsSource = new[]
+                {
+                    new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-30), 5),
+                    new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-20), 6),
+                    new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-10), 8)
+                },
+            });
+            sas.SeriesDefinitions.Add(new SeriesDefinition()
+            {
+                Name = "A1",
+                IndependentValuePath = "Key",
+                DependentValuePath = "Value",
+                ItemsSource = new[]
+            {
+                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-30), 4),
+                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-20), 3),
+                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-10), 0)
+            }
+            });
+            sas.Name = "Boogie";
+            c.Series.Add(sas);
             g.Children.Add(c);
         }
     }
