@@ -54,7 +54,7 @@ namespace mintwpf
             });
             sas.Name = "Boogie";
             c.Series.Add(sas);
-            g.Children.Add(c);
+            GroupBoxGraphResult.Content=c;
         }
     }
 }
