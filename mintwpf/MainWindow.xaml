@@ -14,9 +14,9 @@
         </Grid.RowDefinitions>
         <WrapPanel Orientation="Horizontal" Grid.Row="0">
             <Label Margin="2">Directory of Mint CSVs</Label>
-            <Button Margin="2" Name="ButtonChooseMintCsvDirectory">Choose</Button>
-            <TextBox Margin="2" MinWidth="100" Name="TextBoxMintCsvDirectory" Text="."/>
-            <Button Margin="2" Name="ButtonLoadMintCsv">LOAD</Button>
+            <Button Margin="2" Name="ButtonChooseMintCsvDirectory" Click="ButtonChooseMintCsvDirectory_Click">Choose</Button>
+            <TextBox Margin="2" MinWidth="100" Name="TextBoxMintCsvDirectory" Text="C:\Users\sgulati\OneDrive\2023P\MintCsv" IsReadOnly="True"/>
+            <Button Margin="2" Name="ButtonLoadMintCsv" Click="ButtonLoadMintCsv_Click">LOAD</Button>
             <TextBox Margin="2" IsReadOnly="true" Name="TextBoxLoadResult1" Text="Load results go here"></TextBox>
         </WrapPanel>
         <WrapPanel Grid.Row="1">

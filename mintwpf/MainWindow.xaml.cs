@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Win32;
 
 namespace mintwpf
 {
@@ -25,6 +27,9 @@ namespace mintwpf
         public MainWindow()
         {
             InitializeComponent();
+
+            CheckGuards(); 
+
             var c = new Chart();
 
             var sas = new StackedAreaSeries();
@@ -56,5 +61,35 @@ namespace mintwpf
             c.Series.Add(sas);
             GroupBoxGraphResult.Content=c;
         }
+
+        public void CheckGuards()
+        {
+            ButtonLoadMintCsv.IsEnabled = !String.IsNullOrWhiteSpace(TextBoxMintCsvDirectory.Text) &&
+                                          Directory.Exists(TextBoxMintCsvDirectory.Text);
+
+        }
+
+        private void ButtonChooseMintCsvDirectory_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new SaveFileDialog()
+            {
+                InitialDirectory = TextBoxMintCsvDirectory.Text,
+                FileName = "Choose folder filename doesnt matter",
+                CheckPathExists = true,
+                DefaultExt = ".csv"
+            };
+            if (ofd.ShowDialog() == true)
+            {
+                TextBoxMintCsvDirectory.Text = System.IO.Path.GetDirectoryName(ofd?.FileName)??string.Empty;
+            }
+
+            CheckGuards(); 
+        }
+
+        private void ButtonLoadMintCsv_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
     }
 }
