@@ -93,6 +93,9 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Balances.cs" />
+    <Compile Include="CalculateBalancesOverTimeDwindleCommand.cs" />
+    <Compile Include="CalculateBalancesOverTimeFIFOCommand.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

@@ -1,6 +1,6 @@
-﻿using System.Text;
-
-namespace minterpret;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 public class Balances : Dictionary<string, decimal>
 {

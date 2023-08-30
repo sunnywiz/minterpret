@@ -19,6 +19,7 @@ using System.Windows.Shapes;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.Win32;
+using Exception = System.Exception;
 
 namespace mintwpf;
 
@@ -36,7 +37,6 @@ public partial class MainWindow : Window
         MintRecords = new List<MintRecord>();
 
         DatePickerStartDate.SelectedDate = DateTime.Now.Date.AddDays(-31);
-        DatePickerEndDate.SelectedDate = DateTime.Now.Date.AddDays(-1); 
 
         CheckGuards(); 
 
@@ -184,8 +184,28 @@ public partial class MainWindow : Window
 
     public void HandleException(Exception ex)
     {
+        GroupBoxErrors.Visibility = Visibility.Visible;
         TextBoxErrors.Text = ex.ToString();
         TextBoxErrors.Foreground = new SolidColorBrush(Colors.Red); 
     }
 
+    private void ButtonGraphCategBalanceOverTime_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var startDate = DatePickerStartDate.SelectedDate.Value;
+            var initialBalance = Decimal.Parse(TextBoxInitialBalance.Text);
+            var records = MintRecords.Where(x => x.AccountName == ComboBoxAccountChooser.Text && x.Date >= startDate).ToList();
+
+            var fifoBoT = new CalculateBalancesOverTimeFIFOCommand()
+                .Execute(records, startDate, initialBalance);
+
+            throw new NotImplementedException("not yet");
+            // something here. 
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
 }

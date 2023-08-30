@@ -4,6 +4,7 @@ using CsvHelper;
 using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
 using ClosedXML.Excel;
+using minterpret;
 using OxyPlot.Series;
 using OxyPlot;
 using OxyPlot.ImageSharp;

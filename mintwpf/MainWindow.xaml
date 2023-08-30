@@ -21,17 +21,20 @@
             <TextBox Margin="2" IsReadOnly="true" Name="TextBoxLoadResult1" Text="Load results go here"></TextBox>
         </WrapPanel>
         <WrapPanel Grid.Row="1">
-            <Label>Choose Account:</Label>
-            <ComboBox Name="ComboBoxAccountChooser"></ComboBox>
-            <Label>Start Date:</Label>
-            <DatePicker Name="DatePickerStartDate"></DatePicker>
-            <Label>End Date:</Label>
-            <DatePicker Name="DatePickerEndDate"></DatePicker>
-            <Label>What To Graph:</Label>
-            <ComboBox Name="ComboBoxWhatToGraph">
-
-            </ComboBox>
-            <Button Name="ButtonGraphIt">Graph It</Button>
+            <!-- GroupBox Header="What to Graph?">
+                <ComboBox Name="ComboBoxWhatToGraph"/>
+            We would hide and show stuff depending on what we wanted to graph
+            -->
+            <GroupBox Header="Choose Account" Name="GroupBoxChooseAccount">
+                <ComboBox Name="ComboBoxAccountChooser" IsEditable="False"></ComboBox>
+            </GroupBox>
+            <GroupBox Header="Start Date" Name="GroupBoxStartDate">
+                <DatePicker Name="DatePickerStartDate"></DatePicker>
+            </GroupBox>
+            <GroupBox Header="Initial Balance" Name="GroupBoxInitialBalance">
+                <TextBox Name="TextBoxInitialBalance" Text="0.00"/>
+            </GroupBox>
+            <Button Name="ButtonGraphCategBalanceOverTime" Click="ButtonGraphCategBalanceOverTime_Click">Graph It</Button>
         </WrapPanel>
         <GroupBox Name="GroupBoxErrors" Header="Errors"  Grid.Row="2" Visibility="Collapsed">
             <TextBox IsReadOnly="True" Name="TextBoxErrors">Errors go here</TextBox>
