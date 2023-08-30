@@ -33,7 +33,7 @@
             </ComboBox>
             <Button Name="ButtonGraphIt">Graph It</Button>
         </WrapPanel>
-        <GroupBox Name="GroupBoxErrors" Header="Errors"  Grid.Row="2">
+        <GroupBox Name="GroupBoxErrors" Header="Errors"  Grid.Row="2" Visibility="Collapsed">
             <TextBox IsReadOnly="True" Name="TextBoxErrors">Errors go here</TextBox>
         </GroupBox>
         <GroupBox Name="GroupBoxGraphResult" Header="Graph" Grid.Row="3"></GroupBox>

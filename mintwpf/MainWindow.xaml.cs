@@ -27,9 +27,16 @@ namespace mintwpf;
 /// </summary>
 public partial class MainWindow : Window
 {
+    public List<MintRecord> MintRecords { get; set; }
+
     public MainWindow()
     {
         InitializeComponent();
+
+        MintRecords = new List<MintRecord>();
+
+        DatePickerStartDate.SelectedDate = DateTime.Now.Date.AddDays(-31);
+        DatePickerEndDate.SelectedDate = DateTime.Now.Date.AddDays(-1); 
 
         CheckGuards(); 
 
@@ -67,9 +74,17 @@ public partial class MainWindow : Window
 
     public void CheckGuards()
     {
+        if (TextBoxMintCsvDirectory == null) return;
+        if (ButtonLoadMintCsv == null) return; 
+
         ButtonLoadMintCsv.IsEnabled = !String.IsNullOrWhiteSpace(TextBoxMintCsvDirectory.Text) &&
                                       Directory.Exists(TextBoxMintCsvDirectory.Text);
 
+        if (MintRecords == null) return;
+        if (ComboBoxAccountChooser == null) return; 
+        var selectedSave = ComboBoxAccountChooser.SelectedItem as string;
+        ComboBoxAccountChooser.ItemsSource = MintRecords.Select(x => x.AccountName).OrderBy(x=>x).Distinct().ToList();
+        ComboBoxAccountChooser.SelectedItem = selectedSave; 
     }
 
     private void ButtonChooseMintCsvDirectory_Click(object sender, RoutedEventArgs e)
@@ -91,6 +106,7 @@ public partial class MainWindow : Window
 
     private void ButtonLoadMintCsv_Click(object sender, RoutedEventArgs e)
     {
+        StringBuilder result = new StringBuilder(); 
         try
         {
             var di = new DirectoryInfo(TextBoxMintCsvDirectory.Text);
@@ -105,42 +121,60 @@ public partial class MainWindow : Window
             List<MintRecord> allRecords = new List<MintRecord>();
             foreach (var file in files)
             {
-                List<MintRecord> records;
-                using (var reader = new StreamReader(file.FullName))
+                result.AppendLine($"Loading {file.FullName}");
+                try
                 {
-                    using var csv = new CsvReader(reader, config);
-                    records = csv.GetRecords<MintRecord>().ToList();
-                    
-                    var byGroup = records.GroupBy(x => new
-                        { x.Date, x.OriginalDescription, x.Amount, x.TransactionType, x.AccountName });
-                    foreach (var g in byGroup)
+                    List<MintRecord> records;
+                    using (var reader = new StreamReader(file.FullName))
                     {
-                        var gl = g.ToList();
-                        if (gl.Count == 1) continue; 
-                        for (int i = 1; i < gl.Count; i++)
+                        using var csv = new CsvReader(reader, config);
+                        records = csv.GetRecords<MintRecord>().ToList();
+
+                        result.AppendLine($"Loaded {records.Count} records from {file.FullName}");
+
+                        var byGroup = records.GroupBy(x => new
+                            { x.Date, x.OriginalDescription, x.Amount, x.TransactionType, x.AccountName });
+                        foreach (var g in byGroup)
                         {
-                            gl[i].OriginalDescription += $" (Minterpret:{i + 1}/{gl.Count})";
+                            var gl = g.ToList();
+                            if (gl.Count == 1) continue;
+                            for (int i = 1; i < gl.Count; i++)
+                            {
+                                gl[i].OriginalDescription += $" (Minterpret:{i + 1}/{gl.Count})";
+                            }
                         }
-                    }
 
-                    // now that we have de-duped within a file, lets combine all them
-                    foreach (var r in records)
-                    {
-                        var match = allRecords.FirstOrDefault(q =>
-                            q.Date == r.Date &&
-                            q.Amount == r.Amount &&
-                            String.Compare(q.OriginalDescription, r.OriginalDescription,
-                                StringComparison.InvariantCulture) == 0 &&
-                            String.Compare(q.AccountName, r.AccountName, StringComparison.InvariantCulture) == 0 &&
-                            String.Compare(q.TransactionType, r.TransactionType) == 0);
-                        if (match == null) allRecords.Add(r); 
-                    }
+                        // now that we have de-duped within a file, lets combine all them
+                        foreach (var r in records)
+                        {
+                            var match = allRecords.FirstOrDefault(q =>
+                                q.Date == r.Date &&
+                                q.Amount == r.Amount &&
+                                String.Compare(q.OriginalDescription, r.OriginalDescription,
+                                    StringComparison.InvariantCulture) == 0 &&
+                                String.Compare(q.AccountName, r.AccountName, StringComparison.InvariantCulture) == 0 &&
+                                String.Compare(q.TransactionType, r.TransactionType) == 0);
+                            if (match == null) allRecords.Add(r);
+                        }
 
+                        result.AppendLine($"After ingesting, now have {allRecords.Count} records");
+
+                    }
                 }
-                TextBoxLoadResult1.Text = $"Loaded {records.Count} records from {file.Name}"; 
+                catch (Exception ex)
+                {
+                    result.AppendLine($"Error loading file: {ex.Message}");
+                }
             }
-
             TextBoxLoadResult1.Text = $"Loaded total {allRecords.Count} from {files.Count} files";
+            var tb= new TextBlock();
+            tb.Text = result.ToString();
+            GroupBoxGraphResult.Content = tb;
+
+            MintRecords.Clear(); 
+            MintRecords.AddRange(allRecords);
+
+            CheckGuards();
         }
         catch (Exception ex)
         {
