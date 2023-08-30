@@ -110,20 +110,37 @@ public partial class MainWindow : Window
                 {
                     using var csv = new CsvReader(reader, config);
                     records = csv.GetRecords<MintRecord>().ToList();
+                    
                     var byGroup = records.GroupBy(x => new
                         { x.Date, x.OriginalDescription, x.Amount, x.TransactionType, x.AccountName });
                     foreach (var g in byGroup)
                     {
-                        if (g.Count() > 1)
+                        var gl = g.ToList();
+                        if (gl.Count == 1) continue; 
+                        for (int i = 1; i < gl.Count; i++)
                         {
-                            throw new NotSupportedException(
-                                $"Date/Description/Amount/TransactionType/AccountName not unique in file {file.Name}");
+                            gl[i].OriginalDescription += $" (Minterpret:{i + 1}/{gl.Count})";
                         }
                     }
-                }
 
+                    // now that we have de-duped within a file, lets combine all them
+                    foreach (var r in records)
+                    {
+                        var match = allRecords.FirstOrDefault(q =>
+                            q.Date == r.Date &&
+                            q.Amount == r.Amount &&
+                            String.Compare(q.OriginalDescription, r.OriginalDescription,
+                                StringComparison.InvariantCulture) == 0 &&
+                            String.Compare(q.AccountName, r.AccountName, StringComparison.InvariantCulture) == 0 &&
+                            String.Compare(q.TransactionType, r.TransactionType) == 0);
+                        if (match == null) allRecords.Add(r); 
+                    }
+
+                }
                 TextBoxLoadResult1.Text = $"Loaded {records.Count} records from {file.Name}"; 
             }
+
+            TextBoxLoadResult1.Text = $"Loaded total {allRecords.Count} from {files.Count} files";
         }
         catch (Exception ex)
         {
