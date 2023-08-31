@@ -163,13 +163,16 @@ public partial class MainWindow : Window
     {
         try
         {
-            int totalCategories = 25; 
+            int totalCategories = int.Parse(TextBoxNumberOfCategories.Text);
+            
             var startDate = DatePickerStartDate.SelectedDate.Value;
             var initialBalance = Decimal.Parse(TextBoxInitialBalance.Text);
-            var records = MintRecords.Where(x => x.AccountName == ComboBoxAccountChooser.Text && x.Date >= startDate).ToList();
+            var records = MintRecords
+                .Where(x => x.AccountName == ComboBoxAccountChooser.Text && x.Date >= startDate)
+                .ToList();
 
             var balancesOverTime = new CalculateBalancesOverTimeFIFOCommand()
-                .Execute(records, startDate, initialBalance);
+                .Execute(records, initialBalance);
             if (balancesOverTime.Count == 0) return; 
 
             // the last balance has all the categories
@@ -204,6 +207,10 @@ public partial class MainWindow : Window
             var sas = new StackedAreaSeries();
 
             var firstDate = balancesOverTime.OrderBy(x => x.Key).First().Key;
+            var totalDates = balancesOverTime.Select(x => x.Key).Distinct().Count();
+            int divisor = 1;
+            var maxDates = int.Parse(TextBoxNumDatesMax.Text);
+            while (totalDates / divisor > maxDates) divisor++; 
 
             int seriesNo = 1; 
             foreach (var series in categoriesToSave)
@@ -221,7 +228,7 @@ public partial class MainWindow : Window
                 foreach (var day in days)
                 {
                     if (day < nextDate) continue;
-                    nextDate = nextDate.AddDays(1);
+                    nextDate = nextDate.AddDays(divisor);
 
                     var bal = balancesOverTime[day];
                     if (bal.TryGetValue(series, out var amount))
@@ -233,7 +240,36 @@ public partial class MainWindow : Window
                 seriesDefinition.ItemsSource = items; 
                 sas.SeriesDefinitions.Add(seriesDefinition);
             }
-            // and then add other
+            // Add other
+            {
+                var items = new List<KeyValuePair<DateTime, decimal>>();
+                var seriesDefinition = new SeriesDefinition()
+                {
+                    Name = $"A{seriesNo++}",
+                    IndependentValuePath = "Key",
+                    DependentValuePath = "Value",
+                    Title = "OTHER"
+                };
+                var days = balancesOverTime.Keys.OrderBy(x => x).ToList();
+                var nextDate = firstDate;
+                foreach (var day in days)
+                {
+                    if (day < nextDate) continue;
+                    nextDate = nextDate.AddDays(divisor);
+
+                    var otherTotal = 0m;
+                    var bal = balancesOverTime[day];
+
+                    foreach (var category in bal.Keys)
+                    {
+                        if (categoriesToSave.Contains(category)) continue;
+                        otherTotal += bal[category]; 
+                    }
+                    items.Add(new KeyValuePair<DateTime, decimal>(day,otherTotal));
+                }
+                seriesDefinition.ItemsSource = items; 
+                sas.SeriesDefinitions.Add(seriesDefinition);
+            }
 
             sas.Name = "BalancesOverTime";
             var chart = new Chart();

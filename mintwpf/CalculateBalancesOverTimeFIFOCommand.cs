@@ -6,16 +6,16 @@ namespace mintwpf;
 
 public class CalculateBalancesOverTimeFIFOCommand
 {
-    public Dictionary<DateTime, Balances> Execute(List<MintRecord> mintRecords, DateTime dateTime,
+    public Dictionary<DateTime, Balances> Execute(List<MintRecord> mintRecords,
         decimal initialBalance1)
     {
         Balances b = null;
         DateTime? lastDateTime = null;
         var dictionary = new Dictionary<DateTime, Balances>();
+        var minDate = mintRecords.Min(x => x.Date);
 
 // Make a duplicate so we can adjust balances as we go through it
-        var listToPayOff = mintRecords.Where(x => x.AccountName == "CREDIT CARD" && x.Date >= dateTime
-                && x.SignedAmount < 0)
+        var listToPayOff = mintRecords.Where(x=>x.SignedAmount < 0)
             .Select(x =>
                 new MintRecord()
                 {
@@ -28,10 +28,9 @@ public class CalculateBalancesOverTimeFIFOCommand
 
         listToPayOff.Insert(0, new MintRecord()
         {
-            AccountName = "CREDIT CARD",
             Amount = initialBalance1,
             Category = "Initial Balance",
-            Date = dateTime.AddDays(-1),
+            Date = minDate.AddDays(-1),
             Description = "Initial Balance",
             TransactionType = "debit"
         });
@@ -58,43 +57,34 @@ public class CalculateBalancesOverTimeFIFOCommand
 
             if (r.SignedAmount > 0)
             {
-                if (r.Category == "Credit Card Payment")
+                var amountToPay = r.SignedAmount;
+                while (amountToPay > 0)
                 {
-                    Console.WriteLine("CC Payment!");
-                    var amountToPay = r.SignedAmount;
-                    while (amountToPay > 0)
+                    if (listToPayOff.Any())
                     {
-                        if (listToPayOff.Any())
+                        // remember this is negative
+                        var first = listToPayOff.First();
+                        if (first.SignedAmount < -amountToPay)
                         {
-                            // remember this is negative
-                            var first = listToPayOff.First();
-                            if (first.SignedAmount < -amountToPay)
-                            {
-                                // first can absorb payment
-                                first.Amount -= amountToPay;
-                                b.AddTransaction(first.Category, amountToPay);
-                                amountToPay = 0;
-                            }
-                            else
-                            {
-                                // partial handle, discard the first
-                                amountToPay += first.SignedAmount;
-                                b.AddTransaction(first.Category, -first.SignedAmount);
-                                listToPayOff.RemoveAt(0);
-                            }
+                            // first can absorb payment
+                            first.Amount -= amountToPay;
+                            b.AddTransaction(first.Category, amountToPay);
+                            amountToPay = 0;
                         }
                         else
                         {
-                            // nothing remaining to pay off
-                            b.AddTransaction("Overpayment", amountToPay);
-                            amountToPay = 0;
+                            // partial handle, discard the first
+                            amountToPay += first.SignedAmount;
+                            b.AddTransaction(first.Category, -first.SignedAmount);
+                            listToPayOff.RemoveAt(0);
                         }
                     }
-                }
-                else
-                {
-                    Console.WriteLine($"Add Return Transaction {r.Date:d} {r.Category} {r.SignedAmount}");
-                    b.AddTransaction(r.Category, r.SignedAmount);
+                    else
+                    {
+                        // nothing remaining to pay off
+                        b.AddTransaction("Overpayment", amountToPay);
+                        amountToPay = 0;
+                    }
                 }
             }
             else

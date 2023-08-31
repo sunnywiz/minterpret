@@ -34,6 +34,12 @@
             <GroupBox Header="Initial Balance" Name="GroupBoxInitialBalance">
                 <TextBox Name="TextBoxInitialBalance" Text="0.00"/>
             </GroupBox>
+            <GroupBox Header="Num Categories" Name="GroupBoxNumberOfCategories">
+                <TextBox Name="TextBoxNumberOfCategories" Text="25"/>
+            </GroupBox>
+            <GroupBox Header="Num Dates Max" Name="GroupBoxNumberOfDatesMax">
+                <TextBox Name="TextBoxNumDatesMax" Text="50"></TextBox>
+            </GroupBox>
             <Button Name="ButtonGraphCategBalanceOverTime" Click="ButtonGraphCategBalanceOverTime_Click">Graph It</Button>
         </WrapPanel>
         <GroupBox Name="GroupBoxErrors" Header="Errors"  Grid.Row="2" Visibility="Collapsed">
