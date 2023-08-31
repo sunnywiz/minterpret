@@ -40,36 +40,6 @@ public partial class MainWindow : Window
 
         CheckGuards(); 
 
-        var c = new Chart();
-
-        var sas = new StackedAreaSeries();
-        sas.SeriesDefinitions.Add(new SeriesDefinition()
-        {
-            Name="A2", 
-            IndependentValuePath = "Key",
-            DependentValuePath = "Value",
-            ItemsSource = new[]
-            {
-                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-30), 5),
-                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-20), 6),
-                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-10), 8)
-            },
-        });
-        sas.SeriesDefinitions.Add(new SeriesDefinition()
-        {
-            Name = "A1",
-            IndependentValuePath = "Key",
-            DependentValuePath = "Value",
-            ItemsSource = new[]
-            {
-                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-30), 4),
-                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-20), 3),
-                new KeyValuePair<DateTime, int>(DateTime.Now.Date.AddDays(-10), 0)
-            }
-        });
-        sas.Name = "Boogie";
-        c.Series.Add(sas);
-        GroupBoxGraphResult.Content=c;
     }
 
     public void CheckGuards()
@@ -193,15 +163,82 @@ public partial class MainWindow : Window
     {
         try
         {
+            int totalCategories = 25; 
             var startDate = DatePickerStartDate.SelectedDate.Value;
             var initialBalance = Decimal.Parse(TextBoxInitialBalance.Text);
             var records = MintRecords.Where(x => x.AccountName == ComboBoxAccountChooser.Text && x.Date >= startDate).ToList();
 
-            var fifoBoT = new CalculateBalancesOverTimeFIFOCommand()
+            var balancesOverTime = new CalculateBalancesOverTimeFIFOCommand()
                 .Execute(records, startDate, initialBalance);
+            if (balancesOverTime.Count == 0) return; 
 
-            throw new NotImplementedException("not yet");
-            // something here. 
+            // the last balance has all the categories
+            var lastBalance = balancesOverTime
+                .OrderByDescending(x => x.Key)
+                .First().Value;
+
+            var categories = lastBalance.Keys.OrderBy(x => x).ToList();
+
+// we want to collapse the categories. 
+// find the most active categories
+            var categorySize = categories.ToDictionary(x => x, x => 0m);
+            foreach (var bot in balancesOverTime)
+            {
+                foreach (var c in bot.Value)
+                {
+                    categorySize[c.Key] += Math.Abs(c.Value);
+                }
+            }
+
+            var categoriesToSave = categorySize
+                .OrderByDescending(x => x.Value)
+                .Select(x => x.Key)
+                .Take(totalCategories - 1)
+                .ToList();
+
+// ...    
+//var model = new PlotModel { Title = "Plot", Background = OxyColor.FromRgb(255, 255, 255) };
+//model.Series.Add(new FunctionSeries(Math.Sin, 0d, 10d, 0.1, "Sin(x)"));
+//PngExporter.Export(model, "plot.png", 1280, 720);
+
+            var sas = new StackedAreaSeries();
+
+            var firstDate = balancesOverTime.OrderBy(x => x.Key).First().Key;
+
+            int seriesNo = 1; 
+            foreach (var series in categoriesToSave)
+            {
+                var items = new List<KeyValuePair<DateTime, decimal>>();
+                var seriesDefinition = new SeriesDefinition()
+                {
+                    Name = $"A{seriesNo++}",
+                    IndependentValuePath = "Key",
+                    DependentValuePath = "Value",
+                    Title = series
+                };
+                var days = balancesOverTime.Keys.OrderBy(x => x).ToList();
+                var nextDate = firstDate;
+                foreach (var day in days)
+                {
+                    if (day < nextDate) continue;
+                    nextDate = nextDate.AddDays(1);
+
+                    var bal = balancesOverTime[day];
+                    if (bal.TryGetValue(series, out var amount))
+                    {
+                        items.Add(new KeyValuePair<DateTime, decimal>(day,amount));
+                    }
+                }
+
+                seriesDefinition.ItemsSource = items; 
+                sas.SeriesDefinitions.Add(seriesDefinition);
+            }
+            // and then add other
+
+            sas.Name = "BalancesOverTime";
+            var chart = new Chart();
+            chart.Series.Add(sas);
+            GroupBoxGraphResult.Content=chart; 
         }
         catch (Exception ex)
         {
